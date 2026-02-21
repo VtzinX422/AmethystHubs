@@ -3,10 +3,10 @@ local UIS = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 -- Limpeza de segurança
-if CoreGui:FindFirstChild("VoidAmethyst_V11") then CoreGui.VoidAmethyst_V11:Destroy() end
+if CoreGui:FindFirstChild("VoidAmethyst_V12") then CoreGui.VoidAmethyst_V12:Destroy() end
 
 local MainGui = Instance.new("ScreenGui")
-MainGui.Name = "VoidAmethyst_V11"
+MainGui.Name = "VoidAmethyst_V12"
 MainGui.Parent = CoreGui
 MainGui.IgnoreGuiInset = true 
 MainGui.DisplayOrder = 999
@@ -60,7 +60,33 @@ Notify.TextSize = 20
 Notify.Visible = false
 Notify.ZIndex = 5
 
--- 4. BOTÃO PRINCIPAL
+-- 4. FUNÇÃO DE ARRASTE (PARA MOBILE)
+local function makeDraggable(obj)
+    local dragging, dragInput, dragStart, startPos
+    obj.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = obj.Position
+        end
+    end)
+    obj.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragInput then
+            local delta = dragInput.Position - dragStart
+            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+end
+
+-- 5. BOTÃO PRINCIPAL
 local SelectedObject = nil 
 local clones = {}
 
@@ -68,6 +94,7 @@ local MainBtn = Instance.new("TextButton", MainGui)
 MainBtn.Size = UDim2.new(0, 180, 0, 80); MainBtn.Position = UDim2.new(0.5, -90, 0.6, 0)
 MainBtn.BackgroundColor3 = RoxoStudio; MainBtn.BackgroundTransparency = 0.1; MainBtn.Text = ""; MainBtn.ZIndex = 10
 Instance.new("UICorner", MainBtn).CornerRadius = UDim.new(0, 15)
+makeDraggable(MainBtn)
 
 local InnerText = Instance.new("TextLabel", MainBtn)
 InnerText.Text = "Script para visualizar e ajustar\na posição dos botões na tela"
@@ -76,12 +103,12 @@ InnerText.TextColor3 = Color3.fromRGB(220, 220, 220); InnerText.BackgroundTransp
 
 SelectedObject = MainBtn
 
--- 📄 COPIAR (DENTRO DO PRINCIPAL - BEM PEQUENO)
+-- 📄 COPIAR INTERNO
 local CopyBtn = Instance.new("TextButton", MainBtn)
 CopyBtn.Text = "📄"; CopyBtn.Size = UDim2.new(0, 12, 0, 12); CopyBtn.Position = UDim2.new(1, -18, 0.1, 0)
 CopyBtn.BackgroundTransparency = 1; CopyBtn.TextColor3 = Color3.new(1,1,1); CopyBtn.TextSize = 10; CopyBtn.ZIndex = 15
 
--- 5. ÍCONES DO TOPO
+-- 6. ÍCONES DO TOPO
 local function createTopBtn(text, pos)
     local b = Instance.new("TextButton", Blackout)
     b.Text = text; b.Position = pos; b.Size = UDim2.new(0, 22, 0, 22); b.BackgroundTransparency = 1; b.TextColor3 = Color3.new(1,1,1); b.TextSize = 18; b.ZIndex = 10
@@ -91,42 +118,45 @@ end
 local Toggle = createTopBtn("🔮", UDim2.new(0.96, 0, 0.02, 0))
 local Min = createTopBtn("-", UDim2.new(0.93, 0, 0.02, 0))
 local DelBtn = createTopBtn("❌", UDim2.new(0.89, 0, 0.02, 0))
-local ReportBtn = createTopBtn("📄", UDim2.new(0.85, 0, 0.02, 0)) -- Agora é 📄
+local ReportBtn = createTopBtn("📄", UDim2.new(0.85, 0, 0.02, 0))
 local EditBtn = createTopBtn("✏️", UDim2.new(0.81, 0, 0.02, 0))
 
--- Imagem de Feedback para o ReportBtn
 local FeedbackImg = Instance.new("ImageLabel", ReportBtn)
-FeedbackImg.Size = UDim2.new(1, 0, 1, 0)
-FeedbackImg.BackgroundTransparency = 1
-FeedbackImg.Image = "rbxassetid://95904604481619"
-FeedbackImg.Visible = false
-FeedbackImg.ZIndex = 11
+FeedbackImg.Size = UDim2.new(1, 0, 1, 0); FeedbackImg.BackgroundTransparency = 1; FeedbackImg.Image = "rbxassetid://95904604481619"; FeedbackImg.Visible = false; FeedbackImg.ZIndex = 11
 
 DelBtn.Visible = false; EditBtn.Visible = false; ReportBtn.Visible = false
 
--- 6. INPUT DE NOME
+-- 7. BOTÃO MAXIMIZAR
+local MaxBtn = Instance.new("TextButton", MainGui)
+MaxBtn.Text = "+"; MaxBtn.Size = UDim2.new(0, 35, 0, 35); MaxBtn.Position = UDim2.new(0.05, 0, 0.05, 0)
+MaxBtn.BackgroundColor3 = RoxoStudio; MaxBtn.TextColor3 = Color3.new(1,1,1); MaxBtn.Visible = false; MaxBtn.ZIndex = 50
+Instance.new("UICorner", MaxBtn).CornerRadius = UDim.new(1,0)
+makeDraggable(MaxBtn)
+
+-- LÓGICA DE MINIMIZAR/MAXIMIZAR
+Min.MouseButton1Click:Connect(function()
+    Blackout.Visible = false; MainBtn.Visible = false; MaxBtn.Visible = true
+end)
+
+MaxBtn.MouseButton1Click:Connect(function()
+    Blackout.Visible = true; MainBtn.Visible = true; MaxBtn.Visible = false
+end)
+
+-- 8. INPUT DE NOME
 local NameInput = Instance.new("Frame", MainGui)
 NameInput.Size = UDim2.new(0, 200, 0, 70); NameInput.Position = UDim2.new(0.5, -100, 0.2, 0); NameInput.BackgroundColor3 = Color3.fromRGB(30,30,30); NameInput.Visible = false; NameInput.ZIndex = 100
 Instance.new("UICorner", NameInput)
 local TextBox = Instance.new("TextBox", NameInput); TextBox.Size = UDim2.new(0.8, 0, 0, 25); TextBox.Position = UDim2.new(0.1, 0, 0.5, 0); TextBox.BackgroundColor3 = Color3.fromRGB(50,50,50); TextBox.TextColor3 = Color3.new(1,1,1); TextBox.Text = ""
 
--- MOVIMENTAÇÃO
-local dragging, resizing = false, false
-local dragStart, startPos
+-- RESIZE HANDLE
 local HandleBR = Instance.new("TextButton", MainBtn)
 HandleBR.Text = "↘"; HandleBR.Size = UDim2.new(0, 25, 0, 25); HandleBR.Position = UDim2.new(1, -25, 1, -25); HandleBR.BackgroundTransparency = 1; HandleBR.TextColor3 = Color3.new(1,1,1); HandleBR.TextSize = 22; HandleBR.ZIndex = 12
 
-MainBtn.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then dragging = true; dragStart = i.Position; startPos = MainBtn.Position; SelectedObject = MainBtn end end)
-HandleBR.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then resizing = true; dragging = false end end)
-UIS.InputEnded:Connect(function(i) dragging = false; resizing = false end)
+HandleBR.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.Touch then resizing = true end end)
+UIS.InputEnded:Connect(function(i) resizing = false end)
 UIS.InputChanged:Connect(function(i)
-    if i.UserInputType == Enum.UserInputType.Touch then
-        if dragging then
-            local delta = i.Position - dragStart
-            MainBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        elseif resizing then
-            MainBtn.Size = UDim2.new(0, math.max(60, i.Position.X - MainBtn.AbsolutePosition.X), 0, math.max(40, i.Position.Y - MainBtn.AbsolutePosition.Y))
-        end
+    if resizing and i.UserInputType == Enum.UserInputType.Touch then
+        MainBtn.Size = UDim2.new(0, math.max(60, i.Position.X - MainBtn.AbsolutePosition.X), 0, math.max(40, i.Position.Y - MainBtn.AbsolutePosition.Y))
     end
 end)
 
@@ -136,37 +166,16 @@ CopyBtn.MouseButton1Click:Connect(function()
     Clone:ClearAllChildren(); Instance.new("UICorner", Clone).CornerRadius = MainBtn.UICorner.CornerRadius
     Clone.Text = "Botão cópia "..(#clones + 1); Clone.TextColor3 = Color3.new(1,1,1); Clone.Font = Enum.Font.GothamBold; Clone.TextSize = 10
     Clone.BackgroundColor3 = Color3.fromRGB(math.random(100,255), math.random(100,255), math.random(100,255))
-    
     table.insert(clones, Clone)
-    Clone.MouseButton1Click:Connect(function() 
-        SelectedObject = Clone; 
-        DelBtn.Visible = true; EditBtn.Visible = true; ReportBtn.Visible = true 
-    end)
+    Clone.MouseButton1Click:Connect(function() SelectedObject = Clone; DelBtn.Visible = true; EditBtn.Visible = true; ReportBtn.Visible = true end)
 end)
 
--- LÓGICA EXPORTAR (📄 NO TOPO)
+-- LÓGICA EXPORTAR
 ReportBtn.MouseButton1Click:Connect(function()
     if SelectedObject and SelectedObject ~= MainBtn then
-        local textToCopy = string.format(
-            "Nome do botão: %s\nCord posicionamento\nX: %d\nY: %d\n\nTamanho do botão\nLargura: %d\nAltura: %d\nCopiado da VoidAmethyst Studio 2",
-            SelectedObject.Text,
-            math.floor(SelectedObject.AbsolutePosition.X),
-            math.floor(SelectedObject.AbsolutePosition.Y),
-            math.floor(SelectedObject.AbsoluteSize.X),
-            math.floor(SelectedObject.AbsoluteSize.Y)
-        )
-        setclipboard(textToCopy)
-        
-        -- Efeito Visual
-        ReportBtn.Text = ""
-        FeedbackImg.Visible = true
-        Notify.Visible = true
-        
-        task.delay(3, function()
-            ReportBtn.Text = "📄"
-            FeedbackImg.Visible = false
-            Notify.Visible = false
-        end)
+        setclipboard(string.format("Nome do botão: %s\nX: %d\nY: %d\nLargura: %d\nAltura: %d", SelectedObject.Text, SelectedObject.AbsolutePosition.X, SelectedObject.AbsolutePosition.Y, SelectedObject.AbsoluteSize.X, SelectedObject.AbsoluteSize.Y))
+        ReportBtn.Text = ""; FeedbackImg.Visible = true; Notify.Visible = true
+        task.delay(3, function() ReportBtn.Text = "📄"; FeedbackImg.Visible = false; Notify.Visible = false end)
     end
 end)
 
@@ -200,5 +209,6 @@ createCredit("Dev: Vtzin x", UDim2.new(1, -230, 0.88, 0))
 createCredit("Support: ©VTG solutions", UDim2.new(1, -230, 0.91, 0))
 createCredit("Project name: VoidAmethyst Studio", UDim2.new(1, -230, 0.94, 0))
 
---vlw pela atençao caso ta vendo esse script feito oara ajudar o Vtzin x a trazer outros scripts mais facil 🫶🏽
--- dia 11 de dezembro de 2025 foi oq fes eu apaixonar pela programação 💖
+-- vlw pela atençao caso ta vendo esse script feito para ajudar o Vtzin x a trazer outros scripts mais facil 🫶🏽
+-- dia 11 de dezembro de 2025 foi o dia q eu comecri a godtar da programação e com os meus projetos malucos 💖
+-- #vtzin_x #©VTG solutions #VoidAmethyst Hub 

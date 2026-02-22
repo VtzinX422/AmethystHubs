@@ -60,28 +60,41 @@ Notify.TextSize = 20
 Notify.Visible = false
 Notify.ZIndex = 5
 
--- 4. FUNÇÃO DE ARRASTE (PARA MOBILE)
+-- 4. FUNÇÃO DE ARRASTE (VERSÃO PRO PARA MOBILE)
 local function makeDraggable(obj)
-    local dragging, dragInput, dragStart, startPos
+    local dragging
+    local dragInput
+    local dragStart
+    local startPos
+
+    local function update(input)
+        local delta = input.Position - dragStart
+        obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+
     obj.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true; dragStart = input.Position; startPos = obj.Position
+            dragging = true
+            dragStart = input.Position
+            startPos = obj.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
         end
     end)
+
     obj.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-    RunService.RenderStepped:Connect(function()
-        if dragging and dragInput then
-            local delta = dragInput.Position - dragStart
-            obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-    UIS.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = false
+
+    UIS.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
         end
     end)
 end
@@ -170,10 +183,20 @@ CopyBtn.MouseButton1Click:Connect(function()
     Clone.MouseButton1Click:Connect(function() SelectedObject = Clone; DelBtn.Visible = true; EditBtn.Visible = true; ReportBtn.Visible = true end)
 end)
 
--- LÓGICA EXPORTAR
+-- LÓGICA EXPORTAR (COM A MATEMÁTICA CORRETA)
 ReportBtn.MouseButton1Click:Connect(function()
     if SelectedObject and SelectedObject ~= MainBtn then
-        setclipboard(string.format("Nome do botão: %s\nX: %d\nY: %d\nLargura: %d\nAltura: %d", SelectedObject.Text, SelectedObject.AbsolutePosition.X, SelectedObject.AbsolutePosition.Y, SelectedObject.AbsoluteSize.X, SelectedObject.AbsoluteSize.Y))
+        local pX = SelectedObject.AbsolutePosition.X / MainGui.AbsoluteSize.X
+        local pY = SelectedObject.AbsolutePosition.Y / MainGui.AbsoluteSize.Y
+        local sX = SelectedObject.AbsoluteSize.X / MainGui.AbsoluteSize.X
+        local sY = SelectedObject.AbsoluteSize.Y / MainGui.AbsoluteSize.Y
+        
+        local txtPos = string.format("UDim2.new(%.3f, 0, %.3f, 0)", pX, pY)
+        local txtSize = string.format("UDim2.new(%.3f, 0, %.3f, 0)", sX, sY)
+        local txtCompleto = string.format("Nome: %s\nPos: %s\nSize: %s", SelectedObject.Text, txtPos, txtSize)
+        
+        setclipboard(txtCompleto)
+        
         ReportBtn.Text = ""; FeedbackImg.Visible = true; Notify.Visible = true
         task.delay(3, function() ReportBtn.Text = "📄"; FeedbackImg.Visible = false; Notify.Visible = false end)
     end
@@ -210,5 +233,5 @@ createCredit("Support: ©VTG solutions", UDim2.new(1, -230, 0.91, 0))
 createCredit("Project name: VoidAmethyst Studio", UDim2.new(1, -230, 0.94, 0))
 
 -- vlw pela atençao caso ta vendo esse script feito para ajudar o Vtzin x a trazer outros scripts mais facil 🫶🏽
--- dia 11 de dezembro de 2025 foi o dia q eu comecri a godtar da programação e com os meus projetos malucos 💖
--- #vtzin_x #©VTG solutions #VoidAmethyst Hub 
+-- dia 11 de dezembro de 2025 foi o dia q eu comecri a gostar da programação e com os meus projetos malucos 💖
+-- #vtzin_x #©VTG solutions #VoidAmethyst Hub
